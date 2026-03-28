@@ -1,25 +1,18 @@
 const nodemailer = require("nodemailer");
+const path = require("path");
 
 const transporter = nodemailer.createTransport({
     host: process.env.MAILTRAP_HOST || "sandbox.smtp.mailtrap.io",
-    port: Number(process.env.MAILTRAP_PORT || 25),
+    port: Number(process.env.MAILTRAP_PORT || 2525),
     secure: false,
     auth: {
-        user: process.env.MAILTRAP_USER || "",
-        pass: process.env.MAILTRAP_PASS || "",
+        user: process.env.MAILTRAP_USER || "06f45fbaf9fb7c",
+        pass: process.env.MAILTRAP_PASS || "edb5df0671c0ed",
     },
 });
 
 const defaultFrom = process.env.MAIL_FROM || "admin@hehehe.com";
-const logoSvg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="160" viewBox="0 0 600 160">
-  <rect width="600" height="160" fill="#0f172a"/>
-  <rect x="24" y="24" width="110" height="110" rx="20" fill="#22c55e"/>
-  <text x="79" y="95" text-anchor="middle" font-size="44" font-family="Arial, sans-serif" fill="#ffffff">U</text>
-  <text x="165" y="72" font-size="34" font-family="Arial, sans-serif" fill="#ffffff">User Account</text>
-  <text x="165" y="112" font-size="20" font-family="Arial, sans-serif" fill="#cbd5e1">NNPTUD-C6 import notification</text>
-</svg>
-`;
+const bannerPath = path.join(__dirname, "../assets/mailtrap-banner.png");
 
 async function sendMail(options) {
     return transporter.sendMail({
@@ -55,9 +48,9 @@ async function sendUserCredentialsMail(to, username, password) {
         `,
         attachments: [
             {
-                filename: "user-import-banner.svg",
-                content: logoSvg,
-                contentType: "image/svg+xml",
+                filename: "mailtrap-banner.png",
+                path: bannerPath,
+                contentType: "image/png",
                 cid: "user-import-banner",
             },
         ],
