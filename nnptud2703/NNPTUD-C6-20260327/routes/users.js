@@ -42,6 +42,10 @@ function generateRandomPassword(length) {
     return result;
 }
 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 router.get("/", checkLogin, CheckPermission("ADMIN")
     , async function (req, res, next) {
@@ -163,21 +167,36 @@ router.post("/import", checkLogin, CheckPermission("ADMIN"), uploadExcel.single(
                     userRole._id
                 );
                 await newUser.save();
-                await sendUserCredentialsMail(email, username, password);
-
                 existingUsernames.add(username.toLowerCase());
                 existingEmails.add(email);
 
-                result.push({
-                    row: rowNumber,
-                    status: "success",
-                    user: {
-                        id: newUser._id,
-                        username: username,
-                        email: email,
-                        role: userRole.name
-                    }
-                });
+                try {
+                    await sendUserCredentialsMail(email, username, password);
+                    await delay(1200);
+
+                    result.push({
+                        row: rowNumber,
+                        status: "success",
+                        user: {
+                            id: newUser._id,
+                            username: username,
+                            email: email,
+                            role: userRole.name
+                        }
+                    });
+                } catch (mailError) {
+                    result.push({
+                        row: rowNumber,
+                        status: "mail_failed",
+                        user: {
+                            id: newUser._id,
+                            username: username,
+                            email: email,
+                            role: userRole.name
+                        },
+                        errors: [mailError.message]
+                    });
+                }
             } catch (error) {
                 result.push({
                     row: rowNumber,
@@ -191,6 +210,7 @@ router.post("/import", checkLogin, CheckPermission("ADMIN"), uploadExcel.single(
             filename: req.file.filename,
             total: Math.max(worksheet.rowCount - 1, 0),
             success: result.filter(item => item.status === "success").length,
+            mailFailed: result.filter(item => item.status === "mail_failed").length,
             failed: result.filter(item => item.status === "failed").length,
             result: result
         });
